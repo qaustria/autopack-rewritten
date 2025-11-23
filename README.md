@@ -8,6 +8,26 @@ Automatic Texturepack creator for [BridgeDuel](https://www.roblox.com/games/1395
 
 ## Setup
 
+### Quick Install (Recommended)
+
+**Windows:**
+```bash
+install.bat
+```
+
+**Linux/Mac:**
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+**Or use the Python installer (cross-platform):**
+```bash
+python install.py
+```
+
+### Manual Install
+
 1. Install Python dependencies:
 ```bash
 pip install bpy==4.5.4 --extra-index-url https://download.blender.org/pypi/
