@@ -1,5 +1,6 @@
 # AutoPack
 Automatic Texturepack creator for [BridgeDuel](https://www.roblox.com/games/139566161526375/Bridge-Duel)
+For support, join our [Discord server](https://discord.gg/Rz6QKYWgYj)
 ## Requirements
 
 - Python 3.11
