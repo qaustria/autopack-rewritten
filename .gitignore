@@ -208,6 +208,9 @@ __marimo__/
 
 # Configuration file with API key (DO NOT COMMIT)
 config.py
+generated_clay.json
+generated_items.json
+webhook.py
 
 # Generated output files
 generated_items.json
