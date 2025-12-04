@@ -38,45 +38,29 @@ class Mesh:
             d = dist[y][x]
             if d >= max_dist:
                 continue
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nx, ny = x + dx, y + dy
-                if nx < 0 or ny < 0 or nx >= w or ny >= h:
-                    continue
-                nd = d + 1
-                if nd < dist[ny][nx]:
-                    dist[ny][nx] = nd
-                    nsrc_x[ny][nx] = nsrc_x[y][x]
-                    nsrc_y[ny][nx] = nsrc_y[y][x]
-                    q.append((nx, ny))
-
-        out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+            for dx, dy in ((1,0),(-1,0),(0,1),(0,-1)):
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    nd = d + 1
+                    if nd < dist[ny][nx]:
+                        dist[ny][nx] = nd
+                        nsrc_x[ny][nx] = nsrc_x[y][x]
+                        nsrc_y[ny][nx] = nsrc_y[y][x]
+                        q.append((nx, ny))
+        out = Image.new("RGBA", (w, h), (0,0,0,0))
         out_pixels = out.load()
-        inv_max = 1.0 / max_dist
 
         for y in range(h):
             for x in range(w):
-                d = dist[y][x]
-                if d == INF or d > max_dist:
-                    continue
-
-                sx = nsrc_x[y][x]
-                sy = nsrc_y[y][x]
-                if sx < 0 or sy < 0:
-                    continue
-
-                r, g, b, a = src_pixels[sx, sy]
-                src_alpha = 255 if force_opaque else a
-
-                alpha = max(0.0, (max_dist - float(d)) * inv_max)
-                alpha = alpha * alpha
-
-                out_a = int(alpha * src_alpha + 0.5)
-                if out_a <= 0:
-                    continue
-
-                out_pixels[x, y] = (r, g, b, out_a)
+                if dist[y][x] <= max_dist:
+                    sx = nsrc_x[y][x]
+                    sy = nsrc_y[y][x]
+                    if sx >= 0 and sy >= 0:
+                        r, g, b, a = src_pixels[sx, sy]
+                        out_pixels[x, y] = (r, g, b, 255 if force_opaque else a)
 
         return out
+
 
     def createMesh(self, image_name):
         image_path = self.find_asset(f"{image_name}.png")
