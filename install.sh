@@ -1,31 +1,35 @@
 #!/bin/bash
 
+set -e
+
 echo "=================================================="
-echo "AutoPack Installer"
+echo "AutoPack Installer (Linux/macOS)"
 echo "=================================================="
 echo
 
-# Check if Python is installed
-if ! command -v python3 &> /dev/null; then
-    echo "[ERROR] Python 3 is not installed or not in PATH"
-    echo "Please install Python 3.11 from https://www.python.org/"
+# Find python executable
+if command -v python3 &>/dev/null; then
+    PY=python3
+elif command -v python &>/dev/null; then
+    PY=python
+else
+    echo "[ERROR] Python 3 is not installed."
     exit 1
 fi
 
-echo "[OK] Python found"
-python3 --version
+echo "[OK] Found Python: $PY"
+$PY --version
 echo
 
-# Check Python version
-PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
-PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+# Check Python version (must be 3.11.x)
+PY_MAJOR=$($PY -c "import sys; print(sys.version_info.major)")
+PY_MINOR=$($PY -c "import sys; print(sys.version_info.minor)")
 
-if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 11 ]); then
-    echo "[WARN] Python 3.11 or higher is recommended"
-    echo "Current version: $PYTHON_VERSION"
-    read -p "Continue anyway? (y/n): " continue
-    if [ "$continue" != "y" ] && [ "$continue" != "Y" ]; then
+if [ "$PY_MAJOR" -ne 3 ] || [ "$PY_MINOR" -ne 11 ]; then
+    echo "[WARN] AutoPack requires Python 3.11 for bpy."
+    echo "Detected version: $PY_MAJOR.$PY_MINOR"
+    read -p "Continue anyway? (y/n): " c
+    if [[ "$c" != "y" && "$c" != "Y" ]]; then
         exit 1
     fi
 fi
@@ -34,51 +38,51 @@ echo
 echo "Installing dependencies..."
 echo
 
-echo "[1/4] Installing bpy..."
-python3 -m pip install bpy==4.5.4 --extra-index-url https://download.blender.org/pypi/
-if [ $? -ne 0 ]; then
-    echo "[ERROR] Failed to install bpy"
-    exit 1
+# Allow user to use pre-downloaded bpy wheel
+if ls ./bpy-*.whl 1> /dev/null 2>&1; then
+    echo "[Found] Local bpy wheel detected:"
+    ls bpy-*.whl
+    read -p "Use local wheel instead of slow pip download? (y/n): " use_local
+    if [[ "$use_local" == "y" || "$use_local" == "Y" ]]; then
+        echo "[1/4] Installing local bpy wheel..."
+        $PY -m pip install ./bpy-*.whl
+        echo "[OK] Installed bpy from local wheel"
+    else
+        echo "[1/4] Installing bpy from Blender servers..."
+        $PY -m pip install bpy==4.5.4 --pre --extra-index-url https://download.blender.org/pip/
+    fi
+else
+    echo "[1/4] Installing bpy..."
+    $PY -m pip install bpy==4.5.4 --pre --extra-index-url https://download.blender.org/pip/
 fi
 
 echo
 echo "[2/4] Installing Pillow..."
-python3 -m pip install Pillow
-if [ $? -ne 0 ]; then
-    echo "[ERROR] Failed to install Pillow"
-    exit 1
-fi
+$PY -m pip install Pillow
 
 echo
 echo "[3/4] Installing requests..."
-python3 -m pip install requests
-if [ $? -ne 0 ]; then
-    echo "[ERROR] Failed to install requests"
-    exit 1
-fi
+$PY -m pip install requests
 
 echo
 echo "[4/4] Installing zstandard..."
-python3 -m pip install zstandard
-if [ $? -ne 0 ]; then
-    echo "[ERROR] Failed to install zstandard"
-    exit 1
-fi
+$PY -m pip install zstandard
+
 
 echo
 echo "[OK] All dependencies installed!"
 echo
 
-# Check if config.py exists
+# Config
 if [ ! -f "config.py" ]; then
     if [ -f "config.example.py" ]; then
         echo "Creating config.py from template..."
-        cp config.example.py config.py
+        cp "config.example.py" "config.py"
         echo "[OK] config.py created"
         echo
         echo "[IMPORTANT] Please edit config.py and add your Roblox API key and user ID!"
     else
-        echo "[WARN] config.example.py not found, skipping config setup"
+        echo "[WARN] config.example.py not found — skipping config creation."
     fi
 else
     echo "[OK] config.py already exists"
@@ -91,6 +95,5 @@ echo "=================================================="
 echo
 echo "Next steps:"
 echo "1. Edit config.py with your Roblox API key and user ID"
-echo "2. Run: python3 main.py"
+echo "2. Run: $PY main.py"
 echo
-

@@ -1,28 +1,27 @@
 @echo off
-@echo off
 setlocal enabledelayedexpansion
 
-set TARGET_PY_VERSION=3.11.9
-set TARGET_DIR=%LOCALAPPDATA%\Programs\Python\Python311
-set TARGET_EXE=%TARGET_DIR%\python.exe
+set "TARGET_PY_VERSION=3.11.9"
+set "TARGET_DIR=%LOCALAPPDATA%\Programs\Python\Python311"
+set "TARGET_EXE=%TARGET_DIR%\python.exe"
 
 echo AutoPack Installer
-echo ===================
+echo ==================
 echo.
 
-set NEED_INSTALL=0
+set "NEED_INSTALL=0"
 python --version >nul 2>&1
 if errorlevel 1 (
-    set NEED_INSTALL=1
+    set "NEED_INSTALL=1"
 ) else (
-    for /f "tokens=2" %%v in ('python --version 2^>^&1') do set CURRENT_VERSION=%%v
-    python -c "import sys; import re; import sys; import sys; sys.exit(0 if sys.version_info[:2]==(3,11) else 1)" 2>nul
-    if errorlevel 1 set NEED_INSTALL=1
+    for /f "tokens=2" %%v in ('python --version 2^>^&1') do set "CURRENT_VERSION=%%v"
+    python -c "import sys; sys.exit(0 if sys.version_info[:2]==(3,11) else 1)" 2>nul
+    if errorlevel 1 set "NEED_INSTALL=1"
 )
 
 if %NEED_INSTALL%==1 (
     echo Python 3.11 not found. Installing %TARGET_PY_VERSION%...
-    set INSTALLER=%TEMP%\python-%TARGET_PY_VERSION%-amd64.exe
+    set "INSTALLER=%TEMP%\python-%TARGET_PY_VERSION%-amd64.exe"
     powershell -Command "Invoke-WebRequest -Uri https://www.python.org/ftp/python/%TARGET_PY_VERSION%/python-%TARGET_PY_VERSION%-amd64.exe -OutFile '%INSTALLER%'" || (
         echo [ERROR] Failed to download Python installer.
         pause
@@ -34,10 +33,9 @@ if %NEED_INSTALL%==1 (
         pause
         exit /b 1
     )
-    set PATH=%TARGET_DIR%;%TARGET_DIR%\Scripts;%PATH%
 ) else (
     echo [OK] Python 3.11 detected
-    set TARGET_EXE=python
+    set "TARGET_EXE=python"
 )
 
 echo Using Python: %TARGET_EXE%
@@ -106,13 +104,12 @@ if not exist "config.py" (
 )
 
 echo.
-echo ===================
+echo ==================
 echo Installation complete!
-echo ===================
+echo ==================
 echo.
 echo Next steps:
 echo 1. Edit config.py with your Roblox API key and user ID
 echo 2. Run: %TARGET_EXE% main.py
 echo.
 pause
-

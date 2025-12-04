@@ -84,7 +84,8 @@ class Mesh:
             print(f"Image does not exist! ({image_name})")
             return None
 
-        if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+        ctx_obj = getattr(bpy.context, "object", None)
+        if ctx_obj and ctx_obj.mode != 'OBJECT':
             bpy.ops.object.mode_set(mode='OBJECT')
         bpy.ops.object.select_all(action="SELECT")
         bpy.ops.object.delete(use_global=False)
