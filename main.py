@@ -1,6 +1,8 @@
 from mesh import Mesh
 from upload import Upload
 from zip import Zip
+from mcpack import is_mcpack_file, get_mcpack_file_base
+from newpack import is_new_java_pack, get_new_base, NEW_CLAY_BLOCK_NAMES
 from packutil import PackUtil
 from config import API_KEY, CREATOR_USER_ID
 from pathlib import Path
@@ -17,7 +19,14 @@ def pick_zip_file():
     root = tk.Tk()
     root.withdraw()
     root.wm_attributes("-topmost", 1)
-    fp = filedialog.askopenfilename(title="Select your texture pack (.zip)", filetypes=[("Zip Files", "*.zip")])
+    fp = filedialog.askopenfilename(
+        title="Select your texture pack (.zip or .mcpack)",
+        filetypes=[
+            ("Texture Packs", "*.zip *.mcpack"),
+            ("Zip Files", "*.zip"),
+            ("MCPACK Files", "*.mcpack"),
+        ],
+    )
     root.destroy()
     return fp
 
@@ -77,17 +86,30 @@ def get_file_base(base):
     }
     return o.get(base, base)
 
-required_pngs = []
-for k in TEMPLATE_KEYS:
-    base, kind = get_base_name(k)
-    if base:
-        required_pngs.append(get_file_base(base) + ".png")
-required_pngs.extend(CLAY_BLOCK_NAMES.values())
+def build_required_pngs(file_base_fn, clay_names):
+    required = []
+    for k in TEMPLATE_KEYS:
+        base, kind = get_base_name(k)
+        if base:
+            required.append(file_base_fn(base) + ".png")
+    required.extend(clay_names.values())
+    return required
 
 zipper = Zip(assets_folder=ASSET_DIR, exported_folder=EXPORT_DIR)
 zp = pick_zip_file()
 if not zp:
     raise SystemExit
+if is_mcpack_file(zp):
+    pack_file_base_fn = get_mcpack_file_base
+    clay_name_map = CLAY_BLOCK_NAMES
+elif is_new_java_pack(zp):
+    pack_file_base_fn = get_new_base
+    clay_name_map = NEW_CLAY_BLOCK_NAMES
+else:
+    pack_file_base_fn = get_file_base
+    clay_name_map = CLAY_BLOCK_NAMES
+
+required_pngs = build_required_pngs(pack_file_base_fn, clay_name_map)
 zipper.unzip_pack(zp, required_pngs)
 
 generator = Mesh(base_folder=ASSET_DIR, output_path=EXPORT_DIR, find_asset_fn=find_asset)
@@ -109,7 +131,7 @@ clay_json = {}
 total_timer_start = time.time()
 clay_blocks = {}
 
-for ck, fname in CLAY_BLOCK_NAMES.items():
+for ck, fname in clay_name_map.items():
     candidate = ASSET_DIR / fname
     if candidate.exists():
         clay_blocks[ck] = candidate
@@ -118,17 +140,17 @@ if not clay_blocks:
     root = tk.Tk()
     root.withdraw()
     root.wm_attributes("-topmost", 1)
-    folder = filedialog.askdirectory(title="Locate clay textures (hardened_clay_*.png)")
+    folder = filedialog.askdirectory(title="Locate clay textures (terracotta/hardened clay)")
     root.destroy()
     if folder:
         folder = Path(folder)
-        for ck, fname in CLAY_BLOCK_NAMES.items():
+        for ck, fname in clay_name_map.items():
             candidate = folder / fname
             if candidate.exists():
                 clay_blocks[ck] = candidate
 
 for base, info in base_info.items():
-    file_base = get_file_base(base)
+    file_base = pack_file_base_fn(base)
     src_png = ASSET_DIR / f"{file_base}.png"
     if not src_png.exists():
         continue
