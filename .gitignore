@@ -213,6 +213,8 @@ discordbot.py
 bot.py
 preview.py
 test.py
+pip_package/
+crosshair.py
 
 # Generated output files
 generated_items.json
